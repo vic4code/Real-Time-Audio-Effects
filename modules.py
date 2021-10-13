@@ -11,9 +11,9 @@ def wah_wah(x, fs):
     Difference equation taken from DAFX chapter 2
     Changing this from a BP to a BS (notch instead of a bandpass) converts this effect to a phaser
 
-    yl(n) = F1*yb(n) + yl(n-1)
-    yb(n) = F1*yh(n) + yb(n-1)
-    yh(n) = x(n) - yl(n-1) - Q1*yb(n-1)
+    yl(n) = F1 * yb(n) + yl(n - 1)
+    yb(n) = F1 * yh(n) + yb(n - 1)
+    yh(n) = x(n) - yl(n - 1) - Q1 * yb(n - 1)
 
     vary Fc from 500 to 5000 Hz
     44100 samples per sec
@@ -42,7 +42,7 @@ def wah_wah(x, fs):
         fc = np.append(fc, np.arange(minf, maxf, delta))
     
     # trim tri wave to size of input
-    fc = fc[1:len(x)]
+    fc = fc[:len(x)]
 
     # difference equation coefficients
     F1 = 2 * np.sin((np.pi * fc[1])/fs)  # must be recalculated each time Fc changes
@@ -67,7 +67,9 @@ def wah_wah(x, fs):
 
     #normalise
     maxyb = max(abs(yb))
-    y = yb/maxyb
+    y = yb/ (maxyb + 1e-4)
+
+    # print(maxyb)
 
     return y
 
@@ -309,33 +311,33 @@ def moorer(x, fs):
     # set gain of allpass filter
     ag = 0.7
     # set delay of allpass filter
-    ad = 0.08 * fs
+    ad = int(0.08 * fs)
     # set direct signal gain
     k = 0.5
 
     # send the input to each of the 6 comb filters separately
-    [outcomb1,b1,a1] = filters.lpcomb(x, cg(1), cg1(1), cd(1))
-    [outcomb2,b2,a2] = filters.lpcomb(x, cg(2), cg1(2), cd(2))
-    [outcomb3,b3,a3] = filters.lpcomb(x, cg(3), cg1(3), cd(3))
-    [outcomb4,b4,a4] = filters.lpcomb(x, cg(4), cg1(4), cd(4))
-    [outcomb5,b5,a5] = filters.lpcomb(x, cg(5), cg1(5), cd(5))
-    [outcomb6,b6,a6] = filters.lpcomb(x, cg(6), cg1(6), cd(6))
+    [outcomb1, b1, a1] = filters.lpcomb(x, cg[0], cg1[0], cd[0])
+    [outcomb2, b2, a2] = filters.lpcomb(x, cg[1], cg1[1], cd[1])
+    [outcomb3, b3, a3] = filters.lpcomb(x, cg[2], cg1[2], cd[2])
+    [outcomb4, b4, a4] = filters.lpcomb(x, cg[3], cg1[3], cd[3])
+    [outcomb5, b5, a5] = filters.lpcomb(x, cg[4], cg1[4], cd[4])
+    [outcomb6, b6, a6] = filters.lpcomb(x, cg[5], cg1[5], cd[5])
 
     # sum the ouptut of the 6 comb filters
     apinput = outcomb1 + outcomb2 + outcomb3 + outcomb4 + outcomb5 + outcomb6 
 
     #find the combined filter coefficients of the the comb filters
-    [b,a] = filters.parallelcoefficients(b1,a1,b2,a2)
-    [b,a] = filters.parallelcoefficients(b,a,b3,a3)
-    [b,a] = filters.parallelcoefficients(b,a,b4,a4)
-    [b,a] = filters.parallelcoefficients(b,a,b5,a5)
-    [b,a] = filters.parallelcoefficients(b,a,b6,a6)
+    [b, a] = filters.parallelcoefficients(b1, a1, b2, a2)
+    [b, a] = filters.parallelcoefficients(b, a, b3, a3)
+    [b, a] = filters.parallelcoefficients(b, a, b4, a4)
+    [b, a] = filters.parallelcoefficients(b, a, b5, a5)
+    [b, a] = filters.parallelcoefficients(b, a, b6, a6)
 
     # send the output of the comb filters to the allpass filter
-    [y,b7,a7] = filters.allpass(apinput, ag, ad)
+    [y, b7, a7] = filters.allpass(apinput, ag, ad)
 
     #find the combined filter coefficients of the the comb filters in series with the allpass filters
-    [b,a] = filters.seriescoefficients(b,a,b7,a7)
+    [b, a] = filters.seriescoefficients(b, a, b7, a7)
 
     # add the scaled direct signal
     y = y + k * x

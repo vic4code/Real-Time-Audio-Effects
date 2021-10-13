@@ -51,13 +51,13 @@ def fbcomb(x, g, d):
         g = 0.7  
 
     # Set the b and a coefficients of the transfer function depending on g and d.
-    b = np.concatenate((np.zeros([d]), np.array([1])))
+    b = np.concatenate((np.zeros(d), np.array([1])))
     a = np.concatenate((np.array([1]), np.zeros(d - 1), np.array([-g])))
 
     # filter the input signal 
     y = scipy.signal.lfilter(b, a, x)
 
-    return y
+    return y, b, a
 
 def lpcomb(x, g, g1, d):
     
@@ -84,13 +84,13 @@ def lpcomb(x, g, g1, d):
         g1 = 0.7
 
     # Set the b and a coefficients of the transfer function depending on g, g1 and d.
-    b = np.concatenate((np.zeros([d]), np.array([1]), np.array([-g1])))
-    a = np.concatenate((np.zeros([1]), np.array([-g1]), np.array([-g * (1 - g1)])))
+    b = np.concatenate((np.zeros(d), np.array([1]), np.array([-g1])))
+    a = np.concatenate((np.array([1]), np.array([-g1]), np.zeros(d - 2), np.array([-g * (1 - g1)])))
 
     # filter the input signal 
     y = scipy.signal.lfilter(b, a, x)
 
-    return y
+    return y, b, a
 
 
 def seriescoefficients(b1, a1, b2, a2):
