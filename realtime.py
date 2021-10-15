@@ -9,7 +9,26 @@ import argparse
 import sounddevice as sd
 import numpy  # Make sure NumPy is loaded before it is used in the callback
 assert numpy  # avoid "imported but unused" message (W0611)
-from modules import wah_wah as wah_wah
+from modules import (wah_wah, 
+                     fuzz, delay, 
+                     overdrive, 
+                     fuzzexp, 
+                     pan, 
+                     schroeder1, 
+                     compressor, 
+                     moorer, 
+                     chorus,
+                     reverb
+                     )
+from pedalboard import (
+    Pedalboard,
+    Chorus,
+    Gain,
+    Reverb,
+)
+
+fs = 44100
+board = Pedalboard([Reverb(room_size=0.9, wet_level = 0.6, damping = 1)], sample_rate=fs)
 
 def int_or_str(text):
     """Helper function for argument parsing."""
@@ -18,12 +37,18 @@ def int_or_str(text):
     except ValueError:
         return text
 
+# the process function!
+def process(input_buffer, output_buffer, buffer_len):
+
+    return
+
 def callback(indata, outdata, frames, time, status):
     if status:
         print(status)
     
+    # print(frames)
+    
     # print(indata.shape)
-    fs = 44100
     # l_signal, r_signal = indata[:,0], indata[:,1]
     # l_signal, r_signal = numpy.expand_dims(l_signal, axis=1), \
     #                      numpy.expand_dims(r_signal, axis=1)
@@ -32,7 +57,12 @@ def callback(indata, outdata, frames, time, status):
     #                      numpy.expand_dims(wah_wah(r_signal, fs), axis=1)                     
     # outdata[:] = numpy.concatenate((l_signal, r_signal), axis=1)
 
-    outdata[:] = numpy.expand_dims(wah_wah(indata, fs), axis=1)
+    # outdata[:] = fuzz(indata, fs) #delay(fuzz(indata, fs),fs)
+    # outdata[:] = delay(indata, fs)
+    # outdata[:] = reverb(indata, fs)
+    # outdata[:] = schroeder1(indata, fs)
+    outdata[:] = chorus(indata, fs)
+    # outdata[:] = indata
 
 def main():
     """
@@ -69,9 +99,9 @@ def main():
     # print(sd.Stream.samplerate)
     try:
         with sd.Stream(device=(args.input_device, args.output_device),
-                    samplerate=args.samplerate, blocksize=args.blocksize,
-                    dtype=args.dtype, latency=args.latency,
-                    channels=args.channels, callback=callback):
+                       samplerate=args.samplerate, blocksize=args.blocksize,
+                       dtype=args.dtype, latency=args.latency,
+                       channels=args.channels, callback=callback):
             print('#' * 80)
             print('press Return to quit')
             print('#' * 80)

@@ -1,6 +1,8 @@
 import numpy as np
 import scipy
 
+Epsilon = 1e-4
+
 def allpass(x, g, d):
     """
     This is an allpass filter function.
@@ -20,8 +22,8 @@ def allpass(x, g, d):
         g = 0.7
 
     # Set the b and a coefficients of the transfer function depending on g and d.
-    b = np.concatenate((np.array([g]), np.zeros(d - 1), np.array([1])))
-    a = np.concatenate((np.array([1]), np.zeros(d - 1), np.array([g])))
+    b = np.concatenate((np.array([g]), np.zeros(d), np.array([1])))
+    a = np.concatenate((np.array([1]), np.zeros(d), np.array([g])))
 
     # filter the input signal 
     y = scipy.signal.lfilter(b, a, x)
@@ -129,4 +131,73 @@ def parallelcoefficients(b1, a1, b2, a2):
     a = np.convolve(a1, a2)
 
     return b, a
+
+# Do not use this one, it's only used in the next function!!!
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = scipy.signal.butter(order, [low, high], btype='band')
+    return b, a
+
+# Bandpass filter applied on array "data"
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = scipy.signal.lfilter(b, a, data)
+    return y
+
+# Do not use!!!
+def iir_butter(lowcut, highcut, order=5):
+    return scipy.signal.iirfilter(N=order, Wn=[lowcut, highcut],  btype='band', ftype='butter', analog = False, output='ba')
+
+
+# IIR Bandpass filter applied on array "data" between 0 and 1
+def iir_butter_filter(data, lowcut, highcut, order=5):
+    b, a = iir_butter(lowcut, highcut, order=order)
+    y = scipy.signal.lfilter(b, a, data)
+    return y
+
+# Moving average to scmooth signal
+def smooth(x, window_len=11, window='hanning'):
+	if window_len < 3:
+	    return x
+	s= np.r_[x[window_len - 1:0:-1], x, x[-2:-window_len - 1:-1]]
+	if window == 'flat': #moving average
+	    w=np.ones(window_len,'d')
+	else:
+	    w=eval('np.'+window+'(window_len)')
+	y=np.convolve(w/w.sum(), s, mode='valid')
+	return y
+
+def moving_average(a, n) :
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+def compute_envelope (x, ma_width = 2000):
+    """
+    Compute the envelope of the signal for a dynamic filter application. It is just a moving average applied to the absolute value of the signal,
+    normalized between 0 and 1 with some flooring/ceiling.
+    Parameters:
+    x = The audio signal, between -1 and 1
+    ma_width = The width of the moving average.
+    Return:
+    The envelope of the signal, between 0 and 1
+    """
+
+    # Compute the envelope
+    x = np.squeeze(x)
+    envelope = np.concatenate((np.zeros(ma_width//2), x, np.zeros(ma_width//2)))
+    envelope = moving_average(np.abs(envelope), ma_width)
+    # Log based auditory system
+    envelope_log = np.exp(envelope)
+    # Normalization
+    envelope_log -= np.min(envelope_log)
+    envelope_log /= np.max(envelope_log) + Epsilon
+    # 
+    envelopeF = envelope_log-np.percentile(envelope_log, 10)
+    envelopeF /= np.percentile(envelope_log, 95) + Epsilon
+    envelopeF = np.clip(envelopeF, 0, 1)
+    envelopeF /= np.max(envelopeF) + Epsilon
+    return envelopeF
 

@@ -1,7 +1,18 @@
 import numpy as np
 import librosa
-import filters
+import utils
 import scipy
+
+"""
+Common Plugins for mono audio signal.
+"""
+Epsilon = 1e-4
+
+def shape_check(y):
+    if len(y.shape) < 2:
+        y = np.expand_dims(y, axis=1)
+
+    return y
 
 def wah_wah(x, fs):
     """
@@ -18,21 +29,25 @@ def wah_wah(x, fs):
     vary Fc from 500 to 5000 Hz
     44100 samples per sec
     """
+
+    # buffer size
+    wah_length = fs * 2
+
     # damping factor
     # lower the damping factor the smaller the pass band
-    damp = 0.05
+    damp = 1.8
 
     # min and max centre cutoff frequency of variable bandpass filter
     minf = 500
     maxf = 3000
 
     # wah frequency, how many Hz per second are cycled through
-    fw = 2000 
+    fw = 2000
     #########################################################################
 
     # change in centre frequency per sample (Hz)
-    # delta=0.1
-    delta = fw/fs
+    delta = 0.2
+    # delta = fw / fs 
     #0.1 => at 44100 samples per second should mean  4.41kHz Fc shift per sec
 
     # create triangle wave of centre frequency values
@@ -45,7 +60,7 @@ def wah_wah(x, fs):
     fc = fc[:len(x)]
 
     # difference equation coefficients
-    F1 = 2 * np.sin((np.pi * fc[1])/fs)  # must be recalculated each time Fc changes
+    F1 = 2 * np.sin((np.pi * fc[1]) / fs)  # must be recalculated each time Fc changes
     Q1 = 2 * damp                        # this dictates size of the pass bands
 
     yh = np.zeros(x.shape[0])               # create emptly out vectors
@@ -63,15 +78,13 @@ def wah_wah(x, fs):
         yb[n] = F1 * yh[n] + yb[n - 1]
         yl[n] = F1 * yb[n] + yl[n - 1]
         
-        F1 = 2 * np.sin((np.pi * fc[n])/fs)
+        F1 = 2 * np.sin((np.pi * fc[n]) / fs)
 
     #normalise
     maxyb = max(abs(yb))
-    y = yb/ (maxyb + 1e-4)
+    y = yb / (maxyb + Epsilon)
 
-    # print(maxyb)
-
-    return y
+    return shape_check(y)
 
 def fuzz(x, fs):
     # parameters to vary the effect #
@@ -101,7 +114,7 @@ def fuzz(x, fs):
 
     y = x
 
-    return y
+    return shape_check(y)
 
 def fuzzexp(x, fs):
     # Distortion based on an exponential function
@@ -116,7 +129,7 @@ def fuzzexp(x, fs):
     y = mix * z * max(abs(x)) / max(abs(z)) + (1 - mix) * x
     y = y * max(abs(x)) / max(abs(y))
 
-    return y
+    return shape_check(y)
 
 
 def overdrive(x, fs):
@@ -127,7 +140,7 @@ def overdrive(x, fs):
 
     N = len(x)
     y = np.zeros(N) #Preallocate y
-    th = 1/3 #threshold for symmetrical soft clipping 
+    th = 1/10 #threshold for symmetrical soft clipping 
     
     #by Schetzen Formula
     for i in range(N):
@@ -146,7 +159,7 @@ def overdrive(x, fs):
             if x[i] < 0:
                 y[i] = -1
 
-    return y
+    return shape_check(y)
 
 def delay(x, fs):
     """
@@ -158,38 +171,55 @@ def delay(x, fs):
     # parameters to vary the effect #
     # number of samples first delay is offset
     # should be greater than 1000 to produce an audible effect
-    samp_delay = 2000       
+    # samp_delay = 2000       
 
-    zero_padding = 10 * samp_delay   # length in samples of silence added to end of in-sample to hear the delays
-    no_delays = 10      # number of delays to apply max of 1/dim
-    dim = 0.1      # diminishing amplitude between subsequent delays, deterioration rate
+    # zero_padding = 10 * samp_delay   # length in samples of silence added to end of in-sample to hear the delays
+    # no_delays = 10      # number of delays to apply max of 1/dim
+    # dim = 0.1      # diminishing amplitude between subsequent delays, deterioration rate
 
-    #################################
+    # #################################
 
-    if no_delays > 1/dim :
-        print('ERROR: no_delays must be less than or equal to 1/dim!')
+    # if no_delays > 1 / dim :
+    #     print('ERROR: no_delays must be less than or equal to 1/dim!')
 
-    # if this is a stereo sample
-    if x.shape[-1] == 2:
-        x = x[:,1] # convert to mono (add this to all m files)
+    # # if this is a stereo sample
+    # if x.shape[-1] == 2:
+    #     x = x[:,1] # convert to mono (add this to all m files)
 
-    x = np.expand_dims(x, axis=1)
-    # print(x.shape, np.zeros((zero_padding, 1)).shape)
-    x = np.concatenate((x, np.zeros((zero_padding, 1))), axis=0)    # add zero's to the end of the wave to hear trailing delays
+    # # x = np.expand_dims(x, axis=1)
+    # # print(x.shape, np.zeros((zero_padding, 1)).shape)
+    # xx = np.concatenate((x, np.zeros((zero_padding, 1))), axis=0)    # add zero's to the end of the wave to hear trailing delays
 
+    # # print(x.shape)
+    # # y = np.zeros((len(x),1))
+    # # y[:len(x),:] = x   # create empty out vector, copy initial signal to an out signal
+    # y = np.zeros((len(x), 1))
+    # amp = [1 - j * dim for j in range(no_delays - 1)]  # calculate amplitudes
+
+    # # print(len(x))
+    # # for each sample
+    # for i in range(samp_delay, len(x)):
+    #     #  for each delay
+    #     for j in range(no_delays - 1):
+    #         if i > j * samp_delay:   # causality
+    #             if amp[j] > 0:       # no multiplying by negative amplitudes
+    #                 y[i] = y[i] + amp[j] * xx[:len(x)] # i - j * samp_delay]    # add a delayed diminished sample
+
+    # return shape_check(y)
+
+    x = shape_check(x)
+    repeats = 2 # Number of delays
+    atten = np.array([0.9, 0.5]) # Attenuation of each delay
+    delay = np.array([0.2, 0.4]) # Delays in seconds
+    index = np.round(delay * fs).astype(int) # Delays in samples
+    y = x # Initialize output
+
+    # print(index)
     # print(x.shape)
-    # y = np.zeros((len(x),1))
-    # y[:len(x),:] = x   # create empty out vector, copy initial signal to an out signal
-    y = x
-    amp = [1 - j * dim for j in range(no_delays - 1)]  # calculate amplitudes
-
-    # for each sample
-    for i in range(samp_delay, len(x)):
-        #  for each delay
-        for j in range(no_delays - 1):
-            if i > j * samp_delay:   # causality
-                if amp[j] > 0:       # no multiplying by negative amplitudes
-                    y[i] = y[i] + amp[j] * x[i - j * samp_delay]    # add a delayed diminished sample
+    for i in range(repeats): # For each delay
+        xx = np.concatenate((np.zeros((index[i], 1)), x)) # Zero pad the beginning to add delay
+        xx = atten[i] * xx[:len(x)] # Cut vector to correct length
+        y = y + xx # Add delayed signal to output
 
     return y
 
@@ -214,7 +244,7 @@ def pan(x, fs):
         angle = angle + angle_increment 
         pointer = pointer + lenseg
 
-    return y.transpose()
+    return shape_check(y.transpose())
 
 def compressor(x, fs):
     """
@@ -226,11 +256,24 @@ def compressor(x, fs):
     a = 0.5
 
     h = scipy.signal.lfilter(np.array([(1 - a) ** 2]), np.array([1.0, -2 * a, a ** 2]), abs(x))
-    h = h / max(h)
+    h = h / (max(h) + Epsilon)
+
+    # print(h)
     h = h ** comp
 
     y = x * h
     y = y * max(abs(x)) / max(abs(y))
+
+    return shape_check(y)
+
+def reverb(x, fs):
+    delay1 = round(fs * 0.008) # FIR Delay
+    delay2 = round(fs * 0.025) # IIR Delay
+    coef = 3  # IIR Decay rate
+
+    b = np.concatenate((np.array([1]), np.zeros(delay1), np.array([coef])))
+    a = np.concatenate((np.array([1]), np.zeros(delay2), np.array([-coef])))
+    y = scipy.signal.lfilter(b, a, x) # Filter  
 
     return y
 
@@ -251,31 +294,37 @@ def schroeder1(x, fs):
     note: Make sure that d is the same length as n.
     """
 
+    # Remove Noise 
+    if max(x) < 0.005:
+        return np.zeros((len(x),1))
+
     # Set the number of allpass filters
-    n = 6
+    n = 2
     # Set the gain of the allpass filters
-    g = 0.9
+    g = 0.5
     # Set delay of each allpass filter in number of samples
-    d = np.floor(0.05 * np.random.rand(n) * fs).astype(int)
-    print(d)
+    d = np.floor(0.05 * np.random.rand(n) * fs).astype(int) + 1
+    # print(d)
     #set gain of direct signal
-    k = 0.2
+    k = 0.05
 
     # send the input signal through the first allpass filter
-    y, b, a = filters.allpass(x, g, d[0])
+    y, b, a = utils.allpass(x, g, d[0])
 
     # send the output of each allpass filter to the input of the next allpass filter
     for i in range(1, n):
-        y, b1, a1 = filters.allpass(y, g, d[i])
-        b, a = filters.seriescoefficients(b1, a1, b, a)
+        y, b1, a1 = utils.allpass(y, g, d[i])
+        b, a = utils.seriescoefficients(b1, a1, b, a)
 
     # add the scaled direct signal
     y = y + k * x
 
     # normalize the output signal
-    y = y / max(y)
+    y = y / (max(y) + Epsilon)
 
-    return y
+    # print(x.shape, y.shape)
+
+    return shape_check(y)
 
 def moorer(x, fs):
     """
@@ -316,28 +365,28 @@ def moorer(x, fs):
     k = 0.5
 
     # send the input to each of the 6 comb filters separately
-    [outcomb1, b1, a1] = filters.lpcomb(x, cg[0], cg1[0], cd[0])
-    [outcomb2, b2, a2] = filters.lpcomb(x, cg[1], cg1[1], cd[1])
-    [outcomb3, b3, a3] = filters.lpcomb(x, cg[2], cg1[2], cd[2])
-    [outcomb4, b4, a4] = filters.lpcomb(x, cg[3], cg1[3], cd[3])
-    [outcomb5, b5, a5] = filters.lpcomb(x, cg[4], cg1[4], cd[4])
-    [outcomb6, b6, a6] = filters.lpcomb(x, cg[5], cg1[5], cd[5])
+    [outcomb1, b1, a1] = utils.lpcomb(x, cg[0], cg1[0], cd[0])
+    [outcomb2, b2, a2] = utils.lpcomb(x, cg[1], cg1[1], cd[1])
+    [outcomb3, b3, a3] = utils.lpcomb(x, cg[2], cg1[2], cd[2])
+    [outcomb4, b4, a4] = utils.lpcomb(x, cg[3], cg1[3], cd[3])
+    [outcomb5, b5, a5] = utils.lpcomb(x, cg[4], cg1[4], cd[4])
+    [outcomb6, b6, a6] = utils.lpcomb(x, cg[5], cg1[5], cd[5])
 
     # sum the ouptut of the 6 comb filters
     apinput = outcomb1 + outcomb2 + outcomb3 + outcomb4 + outcomb5 + outcomb6 
 
     #find the combined filter coefficients of the the comb filters
-    [b, a] = filters.parallelcoefficients(b1, a1, b2, a2)
-    [b, a] = filters.parallelcoefficients(b, a, b3, a3)
-    [b, a] = filters.parallelcoefficients(b, a, b4, a4)
-    [b, a] = filters.parallelcoefficients(b, a, b5, a5)
-    [b, a] = filters.parallelcoefficients(b, a, b6, a6)
+    [b, a] = utils.parallelcoefficients(b1, a1, b2, a2)
+    [b, a] = utils.parallelcoefficients(b, a, b3, a3)
+    [b, a] = utils.parallelcoefficients(b, a, b4, a4)
+    [b, a] = utils.parallelcoefficients(b, a, b5, a5)
+    [b, a] = utils.parallelcoefficients(b, a, b6, a6)
 
     # send the output of the comb filters to the allpass filter
-    [y, b7, a7] = filters.allpass(apinput, ag, ad)
+    [y, b7, a7] = utils.allpass(apinput, ag, ad)
 
     #find the combined filter coefficients of the the comb filters in series with the allpass filters
-    [b, a] = filters.seriescoefficients(b, a, b7, a7)
+    [b, a] = utils.seriescoefficients(b, a, b7, a7)
 
     # add the scaled direct signal
     y = y + k * x
@@ -345,7 +394,7 @@ def moorer(x, fs):
     # normalize the output signal
     y = y / max(y)
 
-    return y
+    return shape_check(y)
 
 def reverb_conv(x, h):
     """
@@ -373,10 +422,53 @@ def reverb_conv(x, h):
     y = y[1:1:Ly]                        # Take just the first N elements
     y = y / max(abs(y))                  # Normalize the output
 
-    return y 
+    return shape_check(y)
 
+def chorus(x, fs):
+    
+    """    
+    Chorus.
+    """
 
+    delay_length     = 0.013 # sec
+    modulation_depth = 0.003 # sec
+    modulation_rate  = 1.00  # Hz
+    feedback         = 0.30  # Percent
+    low_shelf_freq   = 600   # Hz
+    low_shelf_gain   = -7    # dB
+    dry_wet_balance  = 0.40  # 0.0 for all dry, 1.0 for all wet
+    delay_length_samples     = round(delay_length * fs)
+    modulation_depth_samples = round(modulation_depth * fs)
 
+    modulated_output = np.zeros((len(x), 1))
+    delay_buffer     = np.zeros((delay_length_samples + modulation_depth_samples, 1))
 
+    # Argument for sin() modulation function. Converts the loop's control variable into 
+    # the appropriate argument in radians to achieve the specified modulation rate
+    modulation_argument = 2 * np.pi * modulation_rate / fs
+    
+    for i in range(len(x)):
+        # Find index to read from for modulated output
+        modulated_sample = modulation_depth_samples * np.sin(modulation_argument * i)
+        # print('ds',modulated_sample)
+        modulated_sample = modulated_sample + delay_length_samples
+
+        # Get values to interpolate between
+        interp_y1 = delay_buffer[int(np.floor(modulated_sample)) - 1, :]
+        interp_y2 = delay_buffer[int(np.ceil(modulated_sample)) - 1, :]
+
+        query_sample = modulated_sample - np.floor(modulated_sample)
+
+        # Interpolate to find the output value
+        modulated_output[i] = interp_y1 + (interp_y2 - interp_y1) * (query_sample)
+
+        # Save the x's current value in the buffer and advance to the next value
+        new_sample = x[i] + modulated_output[i] * feedback
+        # print(new_sample)
+        delay_buffer = np.concatenate((np.array([new_sample]), delay_buffer[:len(delay_buffer) - 1] ), axis=0)
+
+    y = modulated_output
+
+    return y
 
     
