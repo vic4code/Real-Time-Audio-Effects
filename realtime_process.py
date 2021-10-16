@@ -19,16 +19,8 @@ from modules import (wah_wah,
                      chorus,
                      reverb
                      )
-from pedalboard import (
-    Pedalboard,
-    Chorus,
-    Gain,
-    Reverb,
-)
 
 fs = 44100
-board = Pedalboard([Reverb(room_size=0.9, wet_level = 0.6, damping = 1)], sample_rate=fs)
-
 def int_or_str(text):
     """Helper function for argument parsing."""
     try:
