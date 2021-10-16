@@ -5,7 +5,6 @@ https://app.assembla.com/spaces/portaudio/git/source/master/test/patest_wire.c
 
 """
 import argparse
-
 import sounddevice as sd
 import numpy  # Make sure NumPy is loaded before it is used in the callback
 assert numpy  # avoid "imported but unused" message (W0611)
@@ -45,30 +44,19 @@ def process(input_buffer, output_buffer, buffer_len):
 def callback(indata, outdata, frames, time, status):
     if status:
         print(status)
-    
-    # print(frames)
-    
-    # print(indata.shape)
-    # l_signal, r_signal = indata[:,0], indata[:,1]
-    # l_signal, r_signal = numpy.expand_dims(l_signal, axis=1), \
-    #                      numpy.expand_dims(r_signal, axis=1)
 
-    # l_signal, r_signal = numpy.expand_dims(wah_wah(l_signal, fs), axis=1), \
-    #                      numpy.expand_dims(wah_wah(r_signal, fs), axis=1)                     
-    # outdata[:] = numpy.concatenate((l_signal, r_signal), axis=1)
-
-    # outdata[:] = fuzz(indata, fs) #delay(fuzz(indata, fs),fs)
+    outdata[:] = fuzz(indata, fs) 
     # outdata[:] = delay(indata, fs)
     # outdata[:] = reverb(indata, fs)
     # outdata[:] = schroeder1(indata, fs)
-    outdata[:] = chorus(indata, fs)
+    # outdata[:] = chorus(indata, fs)
     # outdata[:] = indata
 
 def main():
     """
     Input to Output Pass-Through
     """
-
+    
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
         '-l', '--list-devices', action='store_true',

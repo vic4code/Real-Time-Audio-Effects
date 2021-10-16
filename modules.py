@@ -46,8 +46,8 @@ def wah_wah(x, fs):
     #########################################################################
 
     # change in centre frequency per sample (Hz)
-    delta = 0.2
-    # delta = fw / fs 
+    # delta = 0.2
+    delta = fw / fs 
     #0.1 => at 44100 samples per second should mean  4.41kHz Fc shift per sec
 
     # create triangle wave of centre frequency values
@@ -88,7 +88,7 @@ def wah_wah(x, fs):
 
 def fuzz(x, fs):
     # parameters to vary the effect #
-    clip = 0.1  # clipping threshold 0-0.99
+    clip = 0.05  # clipping threshold 0-0.99
     #################################
 
     amp = 1 / clip   # amplify coefficient
@@ -168,54 +168,14 @@ def delay(x, fs):
     - do calculations with sampling frequency to convert delay in samples into miliseconds (need 44.1kHz samples)
     - exchange amplitude co-efficients and number of delays for a deterioration rate and shape
     """
-    # parameters to vary the effect #
-    # number of samples first delay is offset
-    # should be greater than 1000 to produce an audible effect
-    # samp_delay = 2000       
-
-    # zero_padding = 10 * samp_delay   # length in samples of silence added to end of in-sample to hear the delays
-    # no_delays = 10      # number of delays to apply max of 1/dim
-    # dim = 0.1      # diminishing amplitude between subsequent delays, deterioration rate
-
-    # #################################
-
-    # if no_delays > 1 / dim :
-    #     print('ERROR: no_delays must be less than or equal to 1/dim!')
-
-    # # if this is a stereo sample
-    # if x.shape[-1] == 2:
-    #     x = x[:,1] # convert to mono (add this to all m files)
-
-    # # x = np.expand_dims(x, axis=1)
-    # # print(x.shape, np.zeros((zero_padding, 1)).shape)
-    # xx = np.concatenate((x, np.zeros((zero_padding, 1))), axis=0)    # add zero's to the end of the wave to hear trailing delays
-
-    # # print(x.shape)
-    # # y = np.zeros((len(x),1))
-    # # y[:len(x),:] = x   # create empty out vector, copy initial signal to an out signal
-    # y = np.zeros((len(x), 1))
-    # amp = [1 - j * dim for j in range(no_delays - 1)]  # calculate amplitudes
-
-    # # print(len(x))
-    # # for each sample
-    # for i in range(samp_delay, len(x)):
-    #     #  for each delay
-    #     for j in range(no_delays - 1):
-    #         if i > j * samp_delay:   # causality
-    #             if amp[j] > 0:       # no multiplying by negative amplitudes
-    #                 y[i] = y[i] + amp[j] * xx[:len(x)] # i - j * samp_delay]    # add a delayed diminished sample
-
-    # return shape_check(y)
 
     x = shape_check(x)
-    repeats = 2 # Number of delays
-    atten = np.array([0.9, 0.5]) # Attenuation of each delay
-    delay = np.array([0.2, 0.4]) # Delays in seconds
+    repeats = 3 # Number of delays
+    atten = np.array([0.9, 0.5, 0.4]) # Attenuation of each delay
+    delay = np.array([0.1, 0.3, 0.6]) # Delays in seconds
     index = np.round(delay * fs).astype(int) # Delays in samples
     y = x # Initialize output
 
-    # print(index)
-    # print(x.shape)
     for i in range(repeats): # For each delay
         xx = np.concatenate((np.zeros((index[i], 1)), x)) # Zero pad the beginning to add delay
         xx = atten[i] * xx[:len(x)] # Cut vector to correct length
@@ -321,8 +281,6 @@ def schroeder1(x, fs):
 
     # normalize the output signal
     y = y / (max(y) + Epsilon)
-
-    # print(x.shape, y.shape)
 
     return shape_check(y)
 
@@ -430,7 +388,7 @@ def chorus(x, fs):
     Chorus.
     """
 
-    delay_length     = 0.013 # sec
+    delay_length     = 0.030 # sec
     modulation_depth = 0.003 # sec
     modulation_rate  = 1.00  # Hz
     feedback         = 0.30  # Percent
