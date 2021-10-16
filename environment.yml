@@ -1,0 +1,11 @@
+name: rt-audio-effect
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - pip
+  - pip:
+    - librosa
+    - numpy
+    - scipy
+    - sounddevice
