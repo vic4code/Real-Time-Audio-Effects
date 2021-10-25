@@ -1,5 +1,5 @@
 # Real-Time-Audio-Effects
-Here is a Python implementation of common audio effects that simulate guitar pedals. Most of the code is refered from [Digital Audio Effects by Marshall et. al](https://www.google.com/searchq=cardiff+university+digitall+audio+effect&oq=cardiff&aqs=chrome.2.69i57j46i67i275j69i59l2j35i39j69i60l3.3778j0j7&sourceid=chrome&ie=UTF-8) which implements the algorithms in Matlab.
+Here is a Python implementation of common audio effects that simulate guitar pedals. Most of the code is refered from [Digital Audio Effects by Marshall et. al](https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/PDF/07_Audio_Effects.pdf) which implements the algorithms in Matlab.
 
 The gui is bulid with [Figma](https://www.figma.com/) and transfered in tkinter app with [TKinterDesigner](https://github.com/ParthJadhav/Tkinter-Designer).
 
@@ -27,7 +27,7 @@ python main.py
 ```
 
 ## Discussion
-When the input sound passes through spatial effects such as "Wah-Wah", "Reverb", "Delay", "Chorus"... There are some glitches when the input audio is passed through, and I think the problem is caused by the buffer IO in the real time processing. The length of the buffer (e.g. 512 samples) is too short to use the algorithms from [Digital Audio Effects](https://www.google.com/searchq=cardiff+university+digitall+audio+effect&oq=cardiff&aqs=chrome.2.69i57j46i67i275j69i59l2j35i39j69i60l3.3778j0j7&sourceid=chrome&ie=UTF-8) for good processing. I think I need to use some post-processing methods to solve this problem.
+When the input sound passes through spatial effects such as "Wah-Wah", "Reverb", "Delay", "Chorus"... There are some glitches when the input audio is passed through, and I think the problem is caused by the buffer IO in the real time processing. The length of the buffer (e.g. 512 samples) is too short to use the algorithms from [Digital Audio Effects](https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/PDF/07_Audio_Effects.pdf) for good processing. I think I need to use some post-processing methods to solve this problem.
 * Modify the algorithm to consider multiple buffers to accommodate real-time processing.
 * Create a fixed queue and process audio by queue instead of by buffer, and the queue contains overlapping buffers.
 
